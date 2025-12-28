@@ -1,0 +1,302 @@
+@import "tailwindcss";
+
+/* Prevent overscroll bounce on macOS */
+html,
+body {
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+@theme {
+  /* New colors, only use these */
+  --color-bg: rgba(255, 255, 255, 1);
+  --color-bgs: rgba(241, 245, 251, 1);
+  --color-primary: rgba(1, 8, 24, 1);
+  --color-secondary: rgba(102, 104, 106, 1);
+  --color-lines: rgba(217, 217, 217, 1);
+
+  --color-accent-1: rgba(92, 4, 232, 1);
+  --color-accent-2: rgba(56, 172, 2, 1);
+  --color-accent-1-dark: rgba(56, 2, 184, 1);
+  --color-accent-1-light: rgba(120, 20, 255, 1);
+  --color-accent-2-dark: rgba(34, 128, 4, 1);
+  --color-accent-2-light: rgba(56, 172, 2, 0.1);
+  --color-points: rgba(255, 226, 94, 1);
+  --color-error: rgba(239, 68, 68, 1);
+}
+
+/* Text definition classes */
+.logofont {
+  font-family: "Saans Mono", monospace;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 670;
+  line-height: normal;
+  letter-spacing: 1.28px;
+}
+
+.title {
+  font-family: "Saans";
+  font-size: 38px;
+  line-height: 110%;
+  font-weight: 550;
+  text-align: center;
+}
+
+.stitle {
+  font-family: "Saans";
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: 0px;
+  font-weight: 450;
+}
+
+@media (min-width: 640px) {
+  .stitle {
+    font-size: 40px;
+  }
+}
+
+.heading {
+  font-family: "Saans";
+  font-size: 22px;
+  line-height: 36px;
+  letter-spacing: -0.48px;
+  font-weight: 500;
+}
+
+.pinput {
+  font-family: "Saans";
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.5%;
+  font-weight: 400;
+}
+
+.primary {
+  font-family: "Saans";
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0%;
+  font-weight: 400;
+}
+
+.secondary {
+  font-family: "Saans";
+  font-size: 13px;
+  line-height: 15px;
+  letter-spacing: 0%;
+  font-weight: 300;
+}
+
+.eyebrows {
+  font-family: "Saans";
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+  font-weight: 400;
+  text-transform: uppercase;
+  font-variation-settings: "MONO" 100;
+}
+
+.eyebrows-bold {
+  font-family: "Saans";
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 5%;
+  font-weight: 550;
+  text-transform: uppercase;
+  font-variation-settings: "MONO" 100;
+}
+
+.cta {
+  font-family: "Saans";
+  font-size: 14px;
+  line-height: 16px;
+  letter-spacing: 2%;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-variation-settings: "MONO" 100;
+}
+
+.points_color {
+  color: var(--color-points);
+}
+
+/* Box component with noise background */
+.box {
+  position: relative;
+  background-color: var(--color-bg);
+  border-radius: 4px;
+  padding: 16px;
+  overflow: hidden;
+  color: var(--color-primary);
+  border: 1px solid rgba(74, 222, 128, 0.5);
+}
+
+.box::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("/noise.png");
+  background-repeat: repeat;
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 3s ease-out forwards;
+}
+
+.animate-fade-in-1s {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-fade-in-2-5s {
+  animation: fadeIn 1s ease-out forwards;
+  animation-delay: 1.5s;
+  opacity: 0;
+}
+
+.animate-fade-in-4s {
+  animation: fadeIn 1s ease-out forwards;
+  animation-delay: 3s;
+  opacity: 0;
+}
+
+/* Scanline animation for terminal effect */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.animate-scan {
+  animation: scan 8s linear infinite;
+}
+
+/* Confetti animation */
+@keyframes confetti {
+  0% {
+    transform: translate(0, 0) rotate(var(--rotation, 0deg));
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(
+        var(--confetti-vx, 0),
+        calc(100vh + var(--confetti-vy, 50vh))
+      )
+      rotate(calc(var(--rotation, 0deg) + 720deg));
+    opacity: 0;
+  }
+}
+
+/* Modal animations */
+@keyframes modalFadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: modalFadeIn 0.2s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hide scrollbar while maintaining scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Progress bar shrink animation for messages */
+@keyframes shrink {
+  0% {
+    transform: scaleX(1);
+  }
+
+  100% {
+    transform: scaleX(0);
+  }
+}
