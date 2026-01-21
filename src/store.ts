@@ -39,6 +39,7 @@ export interface Product {
   cas_number: string;
   chemical_formula: string;
   molar_weight: string;
+  composition?: string;
   vendor_addr: string;
   vendor_secp256k1: string;
 }
@@ -475,7 +476,6 @@ export const use_store = create<Store>()(
             (p) => p.sellerPubKey.toLowerCase() === uncompressed_pub_key.toLowerCase()
           );
           const catalogs: ProductCatalog[] = [];
-          let product_id = 0;
           for (const cp of my_products) {
             try {
               const compressed = await retrieve_products(cp.link);
@@ -493,7 +493,7 @@ export const use_store = create<Store>()(
                 const cols = result.data[i];
                 const base_price = parseFloat(cols[2]) || 0;
                 products.push({
-                  id: product_id++,
+                  id: i - 1,
                   compound_name: cols[0],
                   quantity: cols[1],
                   price: base_price,
@@ -507,6 +507,7 @@ export const use_store = create<Store>()(
                   cas_number: cols[10],
                   chemical_formula: cols[11],
                   molar_weight: cols[12],
+                  composition: cols[13],
                   vendor_addr,
                   vendor_secp256k1,
                 });

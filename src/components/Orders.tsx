@@ -14,25 +14,39 @@ function format_shipping_label(addr: ShippingAddress): string {
   return lines.join("\n");
 }
 
-function find_expected_price(
+function find_catalog_product(
   order: Order,
   catalogs: ProductCatalog[]
-): number | null {
+): { price: number; shipping_cost: number } | null {
   if (!order.product || !order.created_at) return null;
   const order_time = new Date(order.created_at).getTime() / 1000;
   const applicable_catalogs = catalogs.filter((c) => c.timestamp <= order_time);
   if (applicable_catalogs.length === 0) return null;
   const latest_catalog = applicable_catalogs[applicable_catalogs.length - 1];
   const matching_product = latest_catalog.products.find(
-    (p) => p.compound_name === order.product.compound_name && p.quantity === order.product.quantity
+    (p) => p.id === order.product.id
   );
   if (!matching_product) return null;
-  return matching_product.price + matching_product.shipping_cost;
+  return { price: matching_product.price, shipping_cost: matching_product.shipping_cost };
 }
 
 function format_payment_received(order: Order): number {
   if (!order.payment) return 0;
   return order.payment.usdc + order.payment.usdt;
+}
+
+function is_dev_order(order: Order, catalogs: ProductCatalog[]): boolean {
+  const catalog_product = find_catalog_product(order, catalogs);
+  if (!catalog_product) return false;
+  const expected_price = catalog_product.price + catalog_product.shipping_cost;
+  const payment_received = format_payment_received(order);
+  const difference = payment_received - expected_price;
+  return difference < 0 && Math.abs(difference) > expected_price / 2;
+}
+
+function filter_dev_orders(order_list: Order[], catalogs: ProductCatalog[], show_dev: boolean): Order[] {
+  if (show_dev) return order_list;
+  return order_list.filter((o) => !is_dev_order(o, catalogs));
 }
 
 interface FulfillModalProps {
@@ -168,13 +182,22 @@ export function Orders() {
   const private_key = use_store((state) => state.private_key);
   const [fulfill_order, set_fulfill_order] = useState<Order | null>(null);
   const [active_tab, set_active_tab] = useState<"unfulfilled" | "fulfilled">("unfulfilled");
+  const [show_dev_orders, set_show_dev_orders] = useState(false);
 
-  const fulfilled_orders = orders
-    .filter((o) => o.reply_trx_hash)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  const unfulfilled_orders = orders
-    .filter((o) => !o.reply_trx_hash)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const fulfilled_orders = filter_dev_orders(
+    orders
+      .filter((o) => o.reply_trx_hash)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    product_catalogs,
+    show_dev_orders
+  );
+  const unfulfilled_orders = filter_dev_orders(
+    orders
+      .filter((o) => !o.reply_trx_hash)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    product_catalogs,
+    show_dev_orders
+  );
 
   if (!private_key) {
     return (
@@ -195,26 +218,43 @@ export function Orders() {
   return (
     <div className="p-6">
       <h2 className="heading text-primary mb-[16px]">Orders ({orders.length})</h2>
-      <div className="flex gap-[4px] mb-[16px]">
-        <div
-          onClick={() => set_active_tab("unfulfilled")}
-          className={`eyebrows px-[16px] py-[8px] rounded cursor-pointer ${
-            active_tab === "unfulfilled"
-              ? "bg-accent-1 text-white"
-              : "bg-bgs text-secondary hover:bg-lines"
-          }`}
-        >
-          Unfulfilled [{unfulfilled_orders.length}]
+      <div className="flex gap-[4px] mb-[16px] items-center justify-between">
+        <div className="flex gap-[4px]">
+          <div
+            onClick={() => set_active_tab("unfulfilled")}
+            className={`eyebrows px-[16px] py-[8px] rounded cursor-pointer ${
+              active_tab === "unfulfilled"
+                ? "bg-accent-1 text-white"
+                : "bg-bgs text-secondary hover:bg-lines"
+            }`}
+          >
+            Unfulfilled [{unfulfilled_orders.length}]
+          </div>
+          <div
+            onClick={() => set_active_tab("fulfilled")}
+            className={`eyebrows px-[16px] py-[8px] rounded cursor-pointer ${
+              active_tab === "fulfilled"
+                ? "bg-accent-1 text-white"
+                : "bg-bgs text-secondary hover:bg-lines"
+            }`}
+          >
+            Fulfilled [{fulfilled_orders.length}]
+          </div>
         </div>
-        <div
-          onClick={() => set_active_tab("fulfilled")}
-          className={`eyebrows px-[16px] py-[8px] rounded cursor-pointer ${
-            active_tab === "fulfilled"
-              ? "bg-accent-1 text-white"
-              : "bg-bgs text-secondary hover:bg-lines"
-          }`}
-        >
-          Fulfilled [{fulfilled_orders.length}]
+        <div className="flex items-center gap-[8px]">
+          <span className="eyebrows text-secondary">Dev Orders</span>
+          <div
+            onClick={() => set_show_dev_orders(!show_dev_orders)}
+            className={`w-[36px] h-[20px] rounded-full cursor-pointer transition-colors ${
+              show_dev_orders ? "bg-accent-1" : "bg-lines"
+            }`}
+          >
+            <div
+              className={`w-[16px] h-[16px] rounded-full bg-white mt-[2px] transition-transform ${
+                show_dev_orders ? "translate-x-[18px]" : "translate-x-[2px]"
+              }`}
+            />
+          </div>
         </div>
       </div>
       {(active_tab === "fulfilled" ? fulfilled_orders : unfulfilled_orders).length === 0 ? (
@@ -223,7 +263,8 @@ export function Orders() {
       <div className="flex flex-col gap-[16px]">
         {(active_tab === "fulfilled" ? fulfilled_orders : unfulfilled_orders).map((order, idx) => {
           const payment_received = format_payment_received(order);
-          const expected_price = find_expected_price(order, product_catalogs);
+          const catalog_product = find_catalog_product(order, product_catalogs);
+          const expected_price = catalog_product ? catalog_product.price + catalog_product.shipping_cost : null;
           const difference = expected_price !== null ? payment_received - expected_price : null;
           return (
             <div key={order.trx_hash || idx} className="border border-lines p-[16px] rounded bg-bgs">
@@ -234,7 +275,7 @@ export function Orders() {
               {order.product && (
                 <div className="secondary text-secondary mb-[12px]">
                   <p>Quantity: {order.product.quantity}</p>
-                  <p>Price: ${order.product.price.toFixed(6)}</p>
+                  <p>Price: ${catalog_product ? catalog_product.price.toFixed(6) : "N/A"}</p>
                   {order.product.supplier && <p>Supplier: {order.product.supplier}</p>}
                   {order.product.cas_number && <p>CAS: {order.product.cas_number}</p>}
                 </div>
